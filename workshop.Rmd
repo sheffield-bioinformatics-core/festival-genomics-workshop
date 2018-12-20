@@ -1,0 +1,323 @@
+---
+title: "Exploring Cancer Mutation Data using R"
+author: "Mark Dunning; Sheffield Bioinformatics Core"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+![](images/logo-sm.png)
+
+# Exploring and Visualising Variants in R
+
+```{r message=FALSE}
+library(tidyverse)
+```
+
+# Cosmic variants
+
+Download the example file from COSMIC. This is an archive of files. Each has 100 lines of the the full files (that you have to register to access)
+
+```{r eval=FALSE}
+download.file("https://cog.sanger.ac.uk/cosmic/taster/example_grch38_cosmic.tar",destfile = "example_grch38_cosmic.tar")
+```
+
+Use R command to extract files from the archive
+
+```{r eval=FALSE}
+untar(tarfile = "example_grch38_cosmic.tar",exdir="cosmic_example")
+```
+
+
+
+```{r}
+mutants <- read_tsv("cosmic_example/CosmicMutantExport.tsv")
+```
+
+```{r}
+mutants
+```
+
+## `Select`ing columns
+
+We can use the `select` function to print only the columns we are interested in. Column names with a space need to have single quote marks around them `\``
+
+```{r}
+select(mutants, `Gene name`, `Primary site`, `Mutation ID`)
+```
+
+```{r}
+select(mutants, `Gene name`:`Sample name`)
+```
+
+```{r}
+select(mutants, contains("Mutation"))
+```
+
+
+## Splitting columns
+
+We notice that information on the genomic location is contained in one column; whereas we might like columns for the chromosome, start and end.
+
+```{r}
+mutants <- tidyr::separate(mutants, `Mutation genome position`, into=c("Chromosome","Start","End"))
+```
+
+
+## `filter`ing the rows
+
+```{r}
+filter(mutants, `FATHMM prediction`=="PATHOGENIC")
+```
+
+
+
+```{r}
+filter(mutants, `Gene name`=="CMYA5")
+```
+
+## Sorting the data
+
+Data can be sorted according to column with the `arrange` function. We try and sort the rows by chromosome, but there is a problem with the output
+
+```{r}
+arrange(mutants, Chromosome)
+```
+
+## Modifying the columns
+
+```{r}
+mutants <- mutate(mutants, Chromosome = as.numeric(Chromosome))
+```
+
+
+```{r}
+arrange(mutants, Chromosome, desc(Start))
+```
+
+## Chaining operations
+
+Finding all lung cancer mutations that are pathogenic
+
+```{r}
+
+filter(mutants, `Primary site` == "lung",`FATHMM prediction` == "PATHOGENIC") %>% 
+  arrange(Chromosome, Start) %>% 
+  dplyr::select(`Gene name`, `Mutation ID`, `Mutation CDS`)
+
+```
+
+## Plotting
+
+```{r}
+ggplot(mutants, aes(x=`FATHMM prediction`)) + geom_bar()
+```
+
+
+## Accessing the larger dataset
+
+Accessing the full dataset requires registration with COSMIC. Assuming you have completed that process you should be able to download a file `CosmicMutantExportConsensus.tsv.gz` containing all mutants in the Cancer Gene Consensus. It is around 40MB so takes a little bit of time to read into R.
+
+(even though the file is compressed (`.gz`) we can still read it into R)
+
+```{r eval=FALSE}
+consensus_mutants <- read_tsv("CosmicMutantExportCensus.tsv.gz")
+```
+
+
+```{r echo=FALSE}
+consensus_mutants <- read_tsv("CosmicMutantExportCensus.tsv.gz",progress = FALSE)
+```
+
+The data frame object now has 700K rows
+```{r}
+consensus_mutants
+```
+
+A useful tool is `count` that creates a table of how many genes are found in the file
+
+```{r}
+count(consensus_mutants, `Gene name`)
+```
+
+What mutations are recorded for `TP53`?
+
+```{r}
+filter(consensus_mutants, `Gene name`=="TP53")
+```
+
+What is the most commonly mutated gene in breast cancer?
+
+```{r}
+filter(consensus_mutants, `Primary site`=="breast") %>% 
+  count(`Gene name`) %>% 
+  arrange(desc(n))
+```
+
+What cancer types is TP53 most commonly mutated in?
+
+```{r}
+filter(consensus_mutants, `Gene name`=="TP53") %>% 
+  ggplot(aes(x=`Primary site`)) + geom_bar()
+```
+
+There are a few too many sites to see the plot properly, so we can further filter and also flip the axis so it is easier to read
+
+```{r}
+filter(consensus_mutants, `Gene name`=="TP53") %>% 
+  count(`Primary site`) %>% 
+  filter(n > 1000) %>% 
+    ggplot(aes(x=`Primary site`,y=n)) + geom_bar(stat="identity") + coord_flip()
+```
+
+Do TP53 mutations have a different age distribution in different cancer types?
+
+```{r}
+filter(consensus_mutants, `Gene name`=="TP53") %>% 
+  ggplot(aes(x=`Primary site`,y=Age)) + geom_boxplot() + coord_flip()
+```
+
+
+# Annotating vcf files
+
+We will use the somatic calls that have previously been made for the *HCC1143* breast cancer cell line. The calls were made as part of a Cancer Research Uk Bioinformatics Summer School.
+
+The following workflow will be used:- 
+
+- importing raw vcf calls with `VariantAnnotation`
+- use the transcript database package `TxDb....` to annotate variants within coding regions
+- use the genome sequence package `Bsgenome....` to assess function
+- use the genome annotation package `org.Hs.eg.db` to convert to recognisable gene symbols
+- join the tables with `dplyr` and use the functions from the previous section
+
+
+
+```{r message=FALSE,eval=FALSE}
+url <- "https://github.com/bioinformatics-core-shared-training/cruk-summer-school-2016/raw/master/Day3/HCC1143_vs_HCC1143_BL.flagged.muts.vcf"
+download.file(url, destfile="HCC1143_vs_HCC1143_BL.flagged.muts.vcf")
+
+```
+
+The `VariantAnnotation` package can be used to import the data into R. This package is distributed as part of the Bioconductor project.
+
+```{r message=FALSE}
+library(VariantAnnotation)
+raw_vcf <- readVcf("HCC1143_vs_HCC1143_BL.flagged.muts.vcf")
+
+```
+
+To make the process go more smoothly, we will consider variants on chromosomes 1 to 22 only. The naming convention of the chromosomes also needs to be changed to be compatible with the annotation resources we are going to use.
+
+```{r}
+raw_vcf <- keepSeqlevels(raw_vcf, 1:22,pruning.mode = "coarse")
+seqlevelsStyle(raw_vcf) <- "UCSC"
+genome(raw_vcf) <- "hg19"
+```
+
+
+The location of the variants can be returned using the `rowRanges` function that is part of `VariantAnnotation`.
+
+```{r}
+var_locs <- rowRanges(raw_vcf)
+var_locs
+```
+
+We notice that the vcf file already has some filters applied for quality. Variants that pass all the filters have an entry of `PASS`. We will use these variants in subsequent analyses.
+
+N.B. the data aren't yet in a form that we can use the `dplyr` operations from previously, so we have to use a different approach to filter the rows.
+
+```{r}
+pass_vcf <- raw_vcf[var_locs$FILTER == "PASS"]
+pass_locs <- rowRanges(pass_vcf)
+```
+
+The Bioconductor project also distributes several annotation packages that can be used to annotate our results. The collection of `TxDb....` packages comprise definitions of transcripts for a given genome build.
+
+```{r message=FALSE}
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+```
+
+The `locateVariants` function can be used to find the variants. Various types of match including `CodingVariants` that will find variants inside coding regions. The output is converted to a data frame so we can use the `dplyr` functions we saw earlier
+
+We clean-up the output so only certain columns are displayed. The `QUERYID` column needs to be kept to refer back to the complete set of variants in the filtered vcf file.
+
+```{r message=FALSE}
+var_annotations <- locateVariants(pass_locs, txdb, CodingVariants())
+var_annotations <- as.data.frame(var_annotations) %>%
+  dplyr::select(QUERYID,GENEID) %>% unique %>% 
+  filter(!is.na(GENEID))
+var_annotations
+```
+
+With the `predictCoding` function we can assess whether the mutations are going to result in amino acid change or not. This makes use of the Genome sequence, which is available in the `BSgenome.Hsapiens.UCSC.hg19` package.
+
+Again we only use certain columns from the output.
+
+```{r message=FALSE}
+library(BSgenome.Hsapiens.UCSC.hg19)
+var_predictions <- predictCoding(pass_vcf, txdb, seqSource = Hsapiens)
+names(var_predictions) <- make.names(names(var_predictions),unique = TRUE)
+var_predictions <- as.data.frame(var_predictions) %>% 
+  select(QUERYID,CONSEQUENCE,REFCODON,VARCODON,REFAA,VARAA) %>% unique
+var_predictions
+```
+
+Now the data are in data frames, we can join the two tables together with `dplyr`.
+
+```{r}
+var_annotations <- left_join(var_annotations,var_predictions,by="QUERYID")
+var_annotations
+
+
+```
+
+The gene names are currently Entrez ID, which although useful for mapping, do not give particularly memorable names that we can search for. We use a pre-built annotation package `org.Hs.eg.db` to obtain gene symbols.
+
+```{r}
+library(org.Hs.eg.db)
+gene_anno <- AnnotationDbi::select(org.Hs.eg.db,
+                                   columns="SYMBOL",
+                                   keys=var_annotations$GENEID,
+                                   keytype = "ENTREZID") 
+gene_anno <- rename(gene_anno, "GENEID"=ENTREZID)
+
+var_annotations <- left_join(var_annotations, gene_anno) %>% unique
+var_annotations
+```
+
+We can put everything together into one table. The locations from the vcf need to be converted into a data frame including a `QUERYID` column that can be matched to the annotations. This is defined to be the row number.
+
+```{r}
+final_tab <- as.data.frame(pass_locs) %>% 
+  mutate(QUERYID = 1:n()) %>% select(-width,-paramRangeID,-ALT,-QUAL,-FILTER,-strand) %>% 
+  inner_join(var_annotations, by="QUERYID") %>% 
+  select(seqnames:end,SYMBOL,REF:VARAA,-QUERYID)
+final_tab
+```
+
+The `dplyr` functions and `ggplot2` introduced in the previous section can now be applied to our list of variants.
+
+```{r}
+filter(final_tab, CONSEQUENCE=="nonsense")
+```
+
+What genes are most commonly mutated?
+
+```{r}
+count(final_tab, SYMBOL) %>% arrange(desc(n))
+```
+
+
+How many variants are located on each chromosome?
+
+```{r fig.width=12}
+ggplot(final_tab, aes(x=seqnames,fill=CONSEQUENCE)) + geom_bar(position="dodge") + coord_flip()
+```
+
