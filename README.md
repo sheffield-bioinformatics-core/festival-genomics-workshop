@@ -1,2 +1,9 @@
-# festival-genomics-workshop
-Workshop delivere
+# Exploring and Manipulating Mutation Datasets using the R programming language
+
+## About the workshop
+
+Healthcare systems around the globe are transforming medical practice to incorporate genetic variation as a vital information used for diagnosis and treatment planning. Genome sequencing technologies allow us to detect all variants in a patient’s genome and international collaborative efforts such as The 100,000 Genomes Project, The Cancer Genome Atlas (TCGA) and International Cancer Genome Consortium (ICGC) have begun to catalogue and release data on genomic variation in a variety of disease types. However, such large datasets pose new challenges in the way the data have to be analyzed, annotated and interpreted which are not trivial and are daunting to the clinician or biomedical scientist. The R programming language is a highly-regarded tool for performing data science and has many tools that are specified designing for the tasks of "data wrangling", visualisation and creating reproducible analysis workflows. We will present practical examples of how R can be used to filter and manipulate data from COSMIC and how to annotate a set of variant calls presented in the "vcf" format against transcript coordinates and predict amino acid changes.
+
+## About the instructor
+
+Mark completed his PhD at The University of Cambridge before joining the Bioinformatics Core at Cancer Research Uk Cambridge Institute. He has analysed data for landmark papers describing the genomic landscape of breast, prostate and Oesophageal cancer and contributed numerous open-source software packages to the Bioinformatics community. Mark also has a passion for creating and delivering Bioinformatics training courses and established an annual Bioinformatics Summer School for Cancer Research Uk. Mark joined The University of Sheffield in October 2017 to setup a Bioinformatics Core service and continues to be active in the Bioinformatics training community. He recently became an accredited instructor for Software and Data Carpentry; a highly-regarded organisation established to teach foundational coding, and data science skills to researchers worldwide via best-practice teaching principles.
