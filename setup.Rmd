@@ -60,3 +60,4 @@ http://3.8.183.247:8787
 You should now have a version of the RStudio interface open in your web browser with all the R code and packages that we are going to need. 
 
 ![](images/rstudio-welcome.png)
+

@@ -14,35 +14,74 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ![](images/logo-sm.png)
 
+# Hello World!
+
+You are looking at an interactive *notebook* that comprises R code and free text. It can be used to document your analyses and produce reports. An R code chunk looks like this :- `r emo::ji("down")`
+
+```{r}
+
+```
+
+Any R code can be *executed* be placing your cursor on the same and pressing **CTRL** and **ENTER**, or clicking the green triangle on the right of the pane.
+
+**Try this now**
+
+
+```{r}
+print("Hello World")
+```
+
+
+`r emo::ji("tada")`
+
 # Exploring and Visualising Variants in R
+
+R has a rich heritage of packages for manipulating and visualising data and performing statistical analysis. One particular set of packages, the *tidyverse* has gained a lot of attention recently as it supports a lot of common data manipulation operations.
+
+![](https://aberdeenstudygroup.github.io/studyGroup/lessons/SG-T2-JointWorkshop/tidyverse.png)
+
+This [cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf) summarises the main data manipulation functions of the package and the [documentation](https://www.tidyverse.org/) is excellent.
+
+The tidyverse functionality is not automatically built into R. We have to load the *tidyverse* library every time we start R.
 
 ```{r message=FALSE}
 library(tidyverse)
 ```
 
+
 # Cosmic variants
 
-Download the example file from COSMIC. This is an archive of files. Each has 100 lines of the the full files (that you have to register to access)
+We will illustrate some of the main functions from tidyverse with example data from [COSMIC](https://cancer.sanger.ac.uk/cosmic). An example file is freely available, but you will need to register for full-size file. This is an archive of files. Each has 100 lines of the the full files (that you have to register to access)
+
+`download.file` is an R *function* for downloading a file into your *working directory* (the directory where R is currently looking to open files from, and save files to).
 
 ```{r eval=FALSE}
 download.file("https://cog.sanger.ac.uk/cosmic/taster/example_grch38_cosmic.tar",destfile = "example_grch38_cosmic.tar")
 ```
 
-Use R command to extract files from the archive
+We use R function, `untar` to extract files from the archive. You should see that a `cosmic_example` directory has been created.
 
 ```{r eval=FALSE}
 untar(tarfile = "example_grch38_cosmic.tar",exdir="cosmic_example")
 ```
 
+![](images/cosmic_example.png)
 
+We import data so that we can analyse it in R using one of the various functions that are called `read_..`. The choice depends on the type of file (csv, tsv, etc...)
 
 ```{r}
 mutants <- read_tsv("cosmic_example/CosmicMutantExport.tsv")
 ```
 
+The `<-` symbol means that we are storing the data in R's memory for future use. Whenever we want to see what the data look like, or manipulate them, we can use the name of the *"variable"* that we have specified; `mutants`.
+
+This prints the data to the screen, but in a clever way so that we can cycle through the entries.
+
 ```{r}
 mutants
 ```
+
+`mutants` is an example of a *data frame*, which is R's way of storing tabular data where we potentially have different types of data (text, numbers, dates) in each column.
 
 ## `Select`ing columns
 
@@ -58,15 +97,6 @@ select(mutants, `Gene name`:`Sample name`)
 
 ```{r}
 select(mutants, contains("Mutation"))
-```
-
-
-## Splitting columns
-
-We notice that information on the genomic location is contained in one column; whereas we might like columns for the chromosome, start and end.
-
-```{r}
-mutants <- tidyr::separate(mutants, `Mutation genome position`, into=c("Chromosome","Start","End"))
 ```
 
 
