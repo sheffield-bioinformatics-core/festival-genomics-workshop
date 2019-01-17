@@ -14,7 +14,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Setup for Festival of Genomics Workshop 22nd January 2019
 
-In this course we will demonstrate how to run some standard analysis tools for RNA-seq data. The majority of Bioinformatics tools are built with a *command-line* environment in mind, rather than Windows or Mac OSX. To simplify the installation of these tools, we are providing some resources on the *cloud* that you can log into for the duration of the course. 
+In this course we will demonstrate how the R programming language can manipulate data that might arise from an NGS study to identify DNA mutations.
+
+The length of the workshop is quite short, so we can setup some computing resources that you can use to access the materials. Please follow the instructions below at your soonest convenience on 22nd January.
 
 ## 1. Create an account at InstanceHub
 

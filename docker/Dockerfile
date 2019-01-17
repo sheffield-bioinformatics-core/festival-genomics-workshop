@@ -11,3 +11,8 @@ RUN R -e 'devtools:::install_github("sheffield-bioinformatics-core/sbcMisc")'
 RUN R -e 'devtools::install_github("cttobin/ggthemr")'
 RUN R -e 'install.packages("caTools")'
 RUN R -e 'install.packages("rprojroot")'
+RUN git clone https://github.com/sheffield-bioinformatics-core/festival-genomics-workshop.git /home/rstudio/workshop
+RUN mv /home/rstudio/workshop/workshop.Rmd /home/rstudio
+RUN mkdir /home/rstudio/images
+RUN mv /home/rstudio/workshop/images/* /home/rstudio/images
+RUN rm -rf /home/rstudio/workshop
