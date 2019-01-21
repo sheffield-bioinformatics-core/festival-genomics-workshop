@@ -307,6 +307,7 @@ Do TP53 mutations have a different age distribution in different cancer types?
 
 ```{r}
 filter(consensus_mutants, `Gene name`=="TP53") %>% 
+  filter(`Primary site` %in% c("prostate","breast","ovary")) %>% 
   ggplot(aes(x=`Primary site`,y=Age)) + geom_boxplot() + coord_flip()
 ```
 
