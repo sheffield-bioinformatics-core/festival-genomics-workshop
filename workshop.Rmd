@@ -449,3 +449,39 @@ How many variants are located on each chromosome?
 ggplot(final_tab, aes(x=seqnames,fill=CONSEQUENCE)) + geom_bar(position="dodge") + coord_flip()
 ```
 
+# Running this workshop on your own machine
+
+For convenience, we chose to run this workshop through a web-browser on the 22nd January. After the workshop, you will need to install both R **and** RStudio on your own machine and install some R packages.
+
+### Windows
+
+Install R by downloading and running [this .exe](http://cran.r-project.org/bin/windows/base/release.htm) file from CRAN. Also, please download and run the [RStudio installer for Windows](https://www.rstudio.com/products/rstudio/download/#download). 
+
+Then open RStudio and paste the following lines of R code into a console and press Enter
+
+```{r eval=FALSE}
+install.packages("BiocManager")
+BiocManager::install("tidyverse")
+BiocManager::install("VariantAnnotation", version = "3.8")
+BiocManager::install("TxDb.Hsapiens.UCSC.hg19.knownGene", version = "3.8")
+BiocManager::install("org.Hs.eg.db", version = "3.8")
+BiocManager::install("BSgenome.Hsapiens.UCSC.hg19", version = "3.8")
+```
+
+
+
+### Mac
+
+Install R by downloading and running [this .pkg](http://cran.r-project.org/bin/macosx/R-latest.pkg) file from CRAN. Also, please download and run [the RStudio installer for Mac](https://www.rstudio.com/products/rstudio/download/#download)
+
+Then open RStudio and paste the following lines of R code into a console and press Enter
+
+```{r eval=FALSE}
+install.packages("BiocManager")
+BiocManager::install("tidyverse")
+BiocManager::install("VariantAnnotation", version = "3.8")
+BiocManager::install("TxDb.Hsapiens.UCSC.hg19.knownGene", version = "3.8")
+BiocManager::install("org.Hs.eg.db", version = "3.8")
+BiocManager::install("BSgenome.Hsapiens.UCSC.hg19", version = "3.8")
+```
+
