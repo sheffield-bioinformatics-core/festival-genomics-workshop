@@ -178,13 +178,21 @@ The `%>%` operation allows us to write one line of R code that follows on from t
 
 filter(mutants, `Primary site` == "lung",`FATHMM prediction` == "PATHOGENIC") %>% 
   arrange(Chromosome, Start) %>% 
-  select(`Gene name`, `Mutation ID`, `Mutation CDS`)
+  select(Chromosome,Start,`Gene name`, `Mutation ID`, `Mutation CDS`)
 
 ```
 
+```{r}
+filter(mutants, `Primary site` == "lung",`FATHMM prediction` == "PATHOGENIC") %>% 
+  mutate(Chromosome = as.numeric(Chromosome)) %>% 
+  arrange(Chromosome, Start) %>% 
+  select(Chromosome,Start,`Gene name`, `Mutation ID`, `Mutation CDS`)
+```
+
+
 ## Plotting
 
-The tidyverse also provides visualisation via the `ggplot` function. The plotting is extremely flexible and can create publication-ready graphics. There is a useful [cheatsheet]()
+The tidyverse also provides visualisation via the `ggplot` function. The plotting is extremely flexible and can create publication-ready graphics. There is a useful [cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf)
 
 The `gg` in `ggplot` stands for "grammar of graphics" and allows us to "map" between variables in our dataset (such as the `mutants` data we have already been working with).
 
@@ -195,6 +203,13 @@ ggplot(mutants, aes(x=`FATHMM prediction`)) + geom_bar()
 ```
 
 `mutants` is the data that we want to plot; `FATHMM prediction` is the variable we want to show on the x-axis and `geom_bar` is the way that we want to display the data. We will re-visit other plotting types when we have imported a larger version of this dataset.
+
+*e.g. the distribution of gene lengths*
+
+```{r}
+ggplot(mutants, aes(x=`Gene CDS length`)) + geom_histogram()
+```
+
 
 ## Accessing the larger dataset
 
@@ -274,17 +289,17 @@ filter(consensus_mutants, `Gene name`=="TP53") %>%
 
 # Annotating vcf files
 
-We will use the somatic calls that have previously been made for the *HCC1143* breast cancer cell line. The calls were made as part of a Cancer Research Uk Bioinformatics Summer School.
+We will use the somatic calls that have previously been made for the *HCC1143* breast cancer cell line. The calls were made as part of a [Cancer Research Uk Bioinformatics Summer School](https://bioinformatics-core-shared-training.github.io/cruk-summer-school-2016/).
 
-The following workflow will be used:- 
+The following workflow including tools from the Bioconductor project will be used
 
 - importing raw vcf calls with `VariantAnnotation`
 - use the transcript database package `TxDb....` to annotate variants within coding regions
 - use the genome sequence package `Bsgenome....` to assess function
-- use the genome annotation package `org.Hs.eg.db` to convert to recognisable gene symbols
+- use the genome annotation package `org.Hs.eg.db` to convert to between identifiers
 - join the tables with `dplyr` and use the functions from the previous section
 
-
+First we need to download the file and save locally.
 
 ```{r message=FALSE,eval=FALSE}
 url <- "https://github.com/bioinformatics-core-shared-training/cruk-summer-school-2016/raw/master/Day3/HCC1143_vs_HCC1143_BL.flagged.muts.vcf"
@@ -292,12 +307,14 @@ download.file(url, destfile="HCC1143_vs_HCC1143_BL.flagged.muts.vcf")
 
 ```
 
-The `VariantAnnotation` package can be used to import the data into R. This package is distributed as part of the Bioconductor project.
+Although we could use the `read_tsv` function that we saw previously, the vcf file is complex. The `VariantAnnotation` package can be used to import the data into R.
+
+Unlike a data frame, the whole object does not get printed to the screen we type `raw_vcf` and execute.
 
 ```{r message=FALSE}
 library(VariantAnnotation)
 raw_vcf <- readVcf("HCC1143_vs_HCC1143_BL.flagged.muts.vcf")
-
+raw_vcf
 ```
 
 To make the process go more smoothly, we will consider variants on chromosomes 1 to 22 only. The naming convention of the chromosomes also needs to be changed to be compatible with the annotation resources we are going to use.
@@ -309,7 +326,7 @@ genome(raw_vcf) <- "hg19"
 ```
 
 
-The location of the variants can be returned using the `rowRanges` function that is part of `VariantAnnotation`.
+The data from the vcf file has been separated into different parts of the object that can be accessed by a series of functions. The location of the variants can be returned using the `rowRanges` function that is part of `VariantAnnotation`.
 
 ```{r}
 var_locs <- rowRanges(raw_vcf)
@@ -332,9 +349,9 @@ library(TxDb.Hsapiens.UCSC.hg19.knownGene)
 txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
 ```
 
-The `locateVariants` function can be used to find the variants. Various types of match including `CodingVariants` that will find variants inside coding regions. The output is converted to a data frame so we can use the `dplyr` functions we saw earlier
+The `locateVariants` function can be used to find where the variants are located with respect to different types of genomic feature. Various types of match including `CodingVariants` that will find variants inside coding regions. The output is converted to a data frame so we can use the `dplyr` functions we saw earlier
 
-We clean-up the output so only certain columns are displayed. The `QUERYID` column needs to be kept to refer back to the complete set of variants in the filtered vcf file.
+We clean-up the output so only certain columns are displayed. The `QUERYID` column needs to be kept to refer back to the complete set of variants in the filtered vcf file. The `GENEID` column will be used later to map to other annotation resources.
 
 ```{r message=FALSE}
 var_annotations <- locateVariants(pass_locs, txdb, CodingVariants())
@@ -353,7 +370,7 @@ library(BSgenome.Hsapiens.UCSC.hg19)
 var_predictions <- predictCoding(pass_vcf, txdb, seqSource = Hsapiens)
 names(var_predictions) <- make.names(names(var_predictions),unique = TRUE)
 var_predictions <- as.data.frame(var_predictions) %>% 
-  select(QUERYID,CONSEQUENCE,REFCODON,VARCODON,REFAA,VARAA) %>% unique
+  dplyr::select(QUERYID,CONSEQUENCE,REFCODON,VARCODON,REFAA,VARAA) %>% unique
 var_predictions
 ```
 
@@ -374,7 +391,7 @@ gene_anno <- AnnotationDbi::select(org.Hs.eg.db,
                                    columns="SYMBOL",
                                    keys=var_annotations$GENEID,
                                    keytype = "ENTREZID") 
-gene_anno <- rename(gene_anno, "GENEID"=ENTREZID)
+gene_anno <- dplyr::rename(gene_anno, "GENEID"=ENTREZID)
 
 var_annotations <- left_join(var_annotations, gene_anno) %>% unique
 var_annotations
@@ -384,9 +401,9 @@ We can put everything together into one table. The locations from the vcf need t
 
 ```{r}
 final_tab <- as.data.frame(pass_locs) %>% 
-  mutate(QUERYID = 1:n()) %>% select(-width,-paramRangeID,-ALT,-QUAL,-FILTER,-strand) %>% 
+  mutate(QUERYID = 1:n()) %>% dplyr::select(-width,-paramRangeID,-ALT,-QUAL,-FILTER,-strand) %>% 
   inner_join(var_annotations, by="QUERYID") %>% 
-  select(seqnames:end,SYMBOL,REF:VARAA,-QUERYID)
+  dplyr::select(seqnames:end,SYMBOL,REF:VARAA,-QUERYID)
 final_tab
 ```
 
@@ -399,7 +416,7 @@ filter(final_tab, CONSEQUENCE=="nonsense")
 What genes are most commonly mutated?
 
 ```{r}
-count(final_tab, SYMBOL) %>% arrange(desc(n))
+dplyr::count(final_tab, SYMBOL) %>% arrange(desc(n))
 ```
 
 
