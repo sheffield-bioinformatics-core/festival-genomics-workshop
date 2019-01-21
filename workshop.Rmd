@@ -85,15 +85,19 @@ mutants
 
 ## `Select`ing columns
 
-We can use the `select` function to print only the columns we are interested in. Column names with a space need to have single quote marks around them `\``
+We can use the `select` function to print only the columns we are interested in by listing their names with a `,` in between. Column names with a space need to have single quote marks around them `\``
 
 ```{r}
 select(mutants, `Gene name`, `Primary site`, `Mutation ID`)
 ```
 
+If the columns we want are consecutive there is a handy shortcut of `:`
+
 ```{r}
 select(mutants, `Gene name`:`Sample name`)
 ```
+
+Or if we known that the columns all have a particular name in common.
 
 ```{r}
 select(mutants, contains("Mutation"))
@@ -102,59 +106,103 @@ select(mutants, contains("Mutation"))
 
 ## `filter`ing the rows
 
+The `select` function prints all the rows to the screen. There are many ocassions when we might want to print rows that meet a certain criteria. 
+
+*e.g. to find all mutations that are pathogenic.*
+
+The `==` symbol is used to test what entries in the `FATHMM prediction` column are the same as `PATHOGENIC`
+
 ```{r}
 filter(mutants, `FATHMM prediction`=="PATHOGENIC")
 ```
 
-
+Similar example but looking for a given gene
 
 ```{r}
 filter(mutants, `Gene name`=="CMYA5")
 ```
 
-## Sorting the data
+`filter` can also be used when we have numeric data
 
-Data can be sorted according to column with the `arrange` function. We try and sort the rows by chromosome, but there is a problem with the output
+*e.g. what mutations occur in individuals under 50*
 
 ```{r}
-arrange(mutants, Chromosome)
+filter(mutants, Age<50)
 ```
 
 ## Modifying the columns
 
+The `mutate` function can be used to add new columns based on existing ones. An extremely useful function is `separate` that can split columns that appear to contain more than one piece of information. 
+
+*e.g. extract chromosome, start and end from the genome location*
+
+
 ```{r}
-mutants <- mutate(mutants, Chromosome = as.numeric(Chromosome))
+mutants <- separate(mutants, `Mutation genome position`, into= c("Chromosome","Start","End"))
+```
+
+
+## Sorting the data
+
+Data can be sorted according to column with the `arrange` function; either ascending of descending
+
+```{r}
+arrange(mutants, `Gene CDS length`)
 ```
 
 
 ```{r}
-arrange(mutants, Chromosome, desc(Start))
+arrange(mutants, desc(`Gene CDS length`))
+```
+
+Sorting also working on *character* columns
+
+```{r}
+arrange(mutants, `Primary site`)
 ```
 
 ## Chaining operations
 
-Finding all lung cancer mutations that are pathogenic
+The real power of tidyverse lies in the fact that we can chain operations together. Consider that we want an output table of all mutants in lung that are pathogenic, ordered by genomic location, displaying only the location, gene name and mutation ID. Using the R code we have written so far we could do this as:-
+
+```{r}
+mutants2 <- filter(mutants, `Primary site` == "lung",`FATHMM prediction` == "PATHOGENIC")
+mutants3 <- arrange(mutants2,Chromosome,Start)
+mutants4 <- select(mutants3,Chromosome,Start,`Gene name`, `Mutation ID`, `Mutation CDS`)
+mutants4
+```
+
+The `%>%` operation allows us to write one line of R code that follows on from the previous. This results in "cleaner" code that is easier to read and doesn't require us to create lots of variables that are only used once. In this case, our dataset is quite small. For larger datasets we wouldn't really want to create too more copies than necessary.
 
 ```{r}
 
 filter(mutants, `Primary site` == "lung",`FATHMM prediction` == "PATHOGENIC") %>% 
   arrange(Chromosome, Start) %>% 
-  dplyr::select(`Gene name`, `Mutation ID`, `Mutation CDS`)
+  select(`Gene name`, `Mutation ID`, `Mutation CDS`)
 
 ```
 
 ## Plotting
 
+The tidyverse also provides visualisation via the `ggplot` function. The plotting is extremely flexible and can create publication-ready graphics. There is a useful [cheatsheet]()
+
+The `gg` in `ggplot` stands for "grammar of graphics" and allows us to "map" between variables in our dataset (such as the `mutants` data we have already been working with).
+
+*e.g. creating a barplot to show the frequency of various mutation types*
+
 ```{r}
 ggplot(mutants, aes(x=`FATHMM prediction`)) + geom_bar()
 ```
 
+`mutants` is the data that we want to plot; `FATHMM prediction` is the variable we want to show on the x-axis and `geom_bar` is the way that we want to display the data. We will re-visit other plotting types when we have imported a larger version of this dataset.
 
 ## Accessing the larger dataset
 
-Accessing the full dataset requires registration with COSMIC. Assuming you have completed that process you should be able to download a file `CosmicMutantExportConsensus.tsv.gz` containing all mutants in the Cancer Gene Consensus. It is around 40MB so takes a little bit of time to read into R.
+Accessing the full dataset requires registration with COSMIC. Assuming you have completed that process you should be able to download a file `CosmicMutantExportConsensus.tsv.gz` containing all mutants in the Cancer Gene Consensus. This can be found under the heading **All Mutations in Census Genes**. It is around 40MB so takes a little bit of time to read into R.
 
 (even though the file is compressed (`.gz`) we can still read it into R)
+
+We use the same `read_tsv` command with the path to the new file.
 
 ```{r eval=FALSE}
 consensus_mutants <- read_tsv("CosmicMutantExportCensus.tsv.gz")
@@ -170,19 +218,17 @@ The data frame object now has 700K rows
 consensus_mutants
 ```
 
-A useful tool is `count` that creates a table of how many genes are found in the file
+The same `select`, `filter` etc operations apply.
 
-```{r}
-count(consensus_mutants, `Gene name`)
-```
-
-What mutations are recorded for `TP53`?
+*e.g. What mutations are recorded for `TP53`?*
 
 ```{r}
 filter(consensus_mutants, `Gene name`=="TP53")
 ```
 
-What is the most commonly mutated gene in breast cancer?
+*e.g. What is the most commonly mutated gene in breast cancer?*
+
+Here we can use a handy function `count` to count the number of time unique entries in a particular column occur
 
 ```{r}
 filter(consensus_mutants, `Primary site`=="breast") %>% 
@@ -190,7 +236,9 @@ filter(consensus_mutants, `Primary site`=="breast") %>%
   arrange(desc(n))
 ```
 
-What cancer types is TP53 most commonly mutated in?
+The `%>%` operation allows us to plot that data frames that we have manipulated with `filter` etc.
+
+*e.g. gWhat cancer types is TP53 most commonly mutated in?*
 
 ```{r}
 filter(consensus_mutants, `Gene name`=="TP53") %>% 
@@ -205,6 +253,16 @@ filter(consensus_mutants, `Gene name`=="TP53") %>%
   filter(n > 1000) %>% 
     ggplot(aes(x=`Primary site`,y=n)) + geom_bar(stat="identity") + coord_flip()
 ```
+
+The ordering of the bars is alphabetical by default. But it is more natural to reorder according to the counts.
+
+```{r}
+filter(consensus_mutants, `Gene name`=="TP53") %>% 
+  count(`Primary site`) %>% 
+  filter(n > 1000) %>% 
+    ggplot(aes(x=reorder(`Primary site`,n),y=n)) + geom_bar(stat="identity") + coord_flip()
+```
+
 
 Do TP53 mutations have a different age distribution in different cancer types?
 
