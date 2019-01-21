@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Hello World!
 
-You are looking at an interactive *notebook* that comprises R code and free text. It can be used to document your analyses and produce reports. An R code chunk looks like this :- `r emo::ji("down")`
+You are looking at an interactive *notebook* that comprises R code and  text. It can be used to document your analyses and produce reports. An R code chunk looks like this :- 
 
 ```{r}
 
@@ -215,6 +215,8 @@ ggplot(mutants, aes(x=`Gene CDS length`)) + geom_histogram()
 
 Accessing the full dataset requires registration with COSMIC. Assuming you have completed that process you should be able to download a file `CosmicMutantExportConsensus.tsv.gz` containing all mutants in the Cancer Gene Consensus. This can be found under the heading **All Mutations in Census Genes**. It is around 40MB so takes a little bit of time to read into R.
 
+**If you are running this course in-person through a web browser, select the Upload option above the file explorer in RStudio (bottom-right) and select the location of your COSMIC download. The name of the file should appear in the file explorer window**
+
 (even though the file is compressed (`.gz`) we can still read it into R)
 
 We use the same `read_tsv` command with the path to the new file.
@@ -276,8 +278,30 @@ filter(consensus_mutants, `Gene name`=="TP53") %>%
   count(`Primary site`) %>% 
   filter(n > 1000) %>% 
     ggplot(aes(x=reorder(`Primary site`,n),y=n)) + geom_bar(stat="identity") + coord_flip()
+
 ```
 
+To add colour to the plot, we can add an additional option to `geom_bar`, which would use the same colour for all the bars
+
+```{r}
+filter(consensus_mutants, `Gene name`=="TP53") %>% 
+  count(`Primary site`) %>% 
+  filter(n > 1000) %>% 
+    ggplot(aes(x=reorder(`Primary site`,n),y=n)) + geom_bar(stat="identity",fill="steelblue") + coord_flip()
+```
+Colours can also be mapped to columns in the data frame; in the same way that the x- and y- variables can
+
+```{r}
+filter(consensus_mutants, `Gene name`=="TP53") %>% 
+  count(`Primary site`) %>% 
+  filter(n > 1000) %>% 
+    ggplot(aes(x=reorder(`Primary site`,n),y=n,fill=`Primary site`)) + geom_bar(stat="identity") + coord_flip()
+```
+
+Different `geom_`s are possible depending on what kind of data you have. 
+
+- This website might be useful in selecting a visualisation
+    + https://www.data-to-viz.com/
 
 Do TP53 mutations have a different age distribution in different cancer types?
 
@@ -324,7 +348,6 @@ raw_vcf <- keepSeqlevels(raw_vcf, 1:22,pruning.mode = "coarse")
 seqlevelsStyle(raw_vcf) <- "UCSC"
 genome(raw_vcf) <- "hg19"
 ```
-
 
 The data from the vcf file has been separated into different parts of the object that can be accessed by a series of functions. The location of the variants can be returned using the `rowRanges` function that is part of `VariantAnnotation`.
 

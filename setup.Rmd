@@ -61,3 +61,37 @@ You should now have a version of the RStudio interface open in your web browser 
 
 ![](images/rstudio-welcome.png)
 
+## Installation on your own machine after the workshop
+
+### Windows
+
+Install R by downloading and running [this .exe](http://cran.r-project.org/bin/windows/base/release.htm) file from CRAN. Also, please download and run the [RStudio installer for Windows](https://www.rstudio.com/products/rstudio/download/#download). Note that if you have separate user and admin accounts, you should run the installers as administrator (right-click on .exe file and select “Run as administrator” instead of double-clicking). Otherwise problems may occur later, for example when installing R packages.
+
+Then open RStudio and paste the following lines of R code into a console and press Enter
+
+```{r eval=FALSE}
+install.packages("BiocManager")
+BiocManager::install("tidyverse")
+BiocManager::install("VariantAnnotation", version = "3.8")
+BiocManager::install("TxDb.Hsapiens.UCSC.hg19.knownGene", version = "3.8")
+BiocManager::install("org.Hs.eg.db", version = "3.8")
+BiocManager::install("BSgenome.Hsapiens.UCSC.hg19", version = "3.8")
+```
+
+
+
+### Mac
+
+Install R by downloading and running [this .pkg](http://cran.r-project.org/bin/macosx/R-latest.pkg) file from CRAN. Also, please download and run [the RStudio installer for Mac](https://www.rstudio.com/products/rstudio/download/#download)
+
+Then open RStudio and paste the following lines of R code into a console and press Enter
+
+```{r eval=FALSE}
+install.packages("BiocManager")
+BiocManager::install("tidyverse")
+BiocManager::install("VariantAnnotation", version = "3.8")
+BiocManager::install("TxDb.Hsapiens.UCSC.hg19.knownGene", version = "3.8")
+BiocManager::install("org.Hs.eg.db", version = "3.8")
+BiocManager::install("BSgenome.Hsapiens.UCSC.hg19", version = "3.8")
+```
+
