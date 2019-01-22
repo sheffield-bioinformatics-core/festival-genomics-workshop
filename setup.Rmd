@@ -20,7 +20,7 @@ The length of the workshop is quite short, so we can setup some computing resour
 
 ## 1. Create an account at InstanceHub
 
-*InstanceHub* is a tool created at The University of Sheffield for creating cloud resources for computing practicals. You will need to go to [instancehub.com](instancehub.com) and create an account. **Make sure that you specify the same email address that you signed-up to the course**.
+*InstanceHub* is a tool created at The University of Sheffield for creating cloud resources for computing practicals. You will need to go to [instancehub.com](https://www.instancehub.com) and create an account. **Make sure that you specify the same email address that you signed-up to the course**.
 
 
 ## 2. Launch the Lab 
@@ -61,6 +61,10 @@ You should now have a version of the RStudio interface open in your web browser 
 
 ![](images/rstudio-welcome.png)
 
+5. Save your work
+
+At the end of the workshop, you can save any edits you have made to the file be choosing the option **Export** Under the **More** menu in the RStudio file explorer (bottom-right panel)
+
 ## Installation on your own machine after the workshop
 
 ### Windows
@@ -95,3 +99,8 @@ BiocManager::install("org.Hs.eg.db", version = "3.8")
 BiocManager::install("BSgenome.Hsapiens.UCSC.hg19", version = "3.8")
 ```
 
+### Repeating the code from the workshop
+
+If you saved the file you created during the workshop, you will be able to open it using the menu **File** -> **Open File** in RStudio.
+
+Otherwise you can get a fresh copy of the workshop using [this link](http://sbc.shef.ac.uk/festival-genomics-workshop/workshop.Rmd)
